@@ -1,0 +1,51 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+
+int main(void) {
+
+    int fd[2];
+    pid_t pid;
+    char msg[] = "Hello from the parent process!";
+    char buffer[100];
+    
+    //This create the pipe
+    if (pipe(fd) == -1) {
+        perror("pipe error");
+        return 1;
+    }
+
+    // Fork a child process. This process is always the same
+    pid = fork();
+
+    if (pid < 0) {
+        perror("fork error");
+        return 1;
+    }
+
+
+    if (pid==0)  { // Child process
+        close(fd[1]); // Close unused write end of the pipe
+
+        read(fd[0], buffer, sizeof(buffer)); // Read from the pipe
+        printf("Child received: %s\n", buffer);
+        close(fd[0]);  
+
+    }
+    
+     else { // Parent process
+        close(fd[0]); // Close unused read end of the pipe
+        
+        write(fd[1], msg, strlen(msg) + 1); //This writes to the pipe
+        close(fd[1]); // Close write end
+
+        wait(NULL); // Wait for child process to finish
+    }
+        
+
+
+return 0;
+}
